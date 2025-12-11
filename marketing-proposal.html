@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow the Silver Fern</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2a2a2a;
+            font-family: 'Georgia', serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1200px;
+            height: 675px;
+        }
+
+        #background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        #fern {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-height: 320px;
+            z-index: 2;
+            object-fit: contain;
+        }
+
+        #night-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: black;
+            opacity: 0;
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        #text-box {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 450px;
+            padding: 15px 25px;
+            background: rgba(227, 218, 201, 0.95);
+            border: 3px solid #8b7355;
+            border-radius: 4px;
+            z-index: 20;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #text-box.visible {
+            opacity: 1;
+        }
+
+        #text-box p {
+            color: #4a4a3a;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        #action-buttons {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            transition: transform 0.15s;
+            object-fit: contain;
+        }
+
+        .action-btn:hover:not(.disabled) {
+            transform: scale(1.08);
+        }
+
+        .action-btn.disabled {
+            filter: grayscale(100%) brightness(0.5);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        #next-btn {
+            position: absolute;
+            bottom: 50px;
+            right: 40px;
+            z-index: 10;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+            color: #4a4a3a;
+            background: #c9b896;
+            border: 2px solid #8b7355;
+            border-radius: 4px;
+            padding: 10px 20px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.15s, background 0.15s;
+        }
+
+        #next-btn.active {
+            opacity: 1;
+        }
+
+        #next-btn.active:hover {
+            transform: scale(1.05);
+            background: #d4c4a8;
+        }
+
+        #next-btn:not(.active) {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <img id="background" src="background.png" alt="Background">
+        <img id="fern" src="fern_0.png" alt="Fern">
+        <div id="night-overlay"></div>
+
+        <div id="text-box">
+            <p id="message"></p>
+        </div>
+
+        <div id="action-buttons">
+            <img id="seeds-btn" class="action-btn" src="seeds_closed.png" alt="Seeds">
+            <img id="water-btn" class="action-btn disabled" src="can_upright.png" alt="Water">
+        </div>
+
+        <button id="next-btn">SKIP TO NEXT STAGE →</button>
+    </div>
+
+    <script>
+        const TEXT_PROMPTS = [
+            "The soil awaits. Plant your seeds to begin.",
+            "Seeds planted! Now water them to help them grow.",
+            "The seeds drink deeply. Press NEXT to see what tomorrow brings.",
+            "A tiny sprout emerges! Water it to encourage growth.",
+            "The sprout reaches for the light. Tomorrow holds promise.",
+            "Small fronds begin to unfurl. Keep nurturing your fern.",
+            "The fern grows stronger each day. Continue your care.",
+            "Beautiful leaves spread wide. Your fern is thriving.",
+            "The fern stands tall and proud. Almost fully grown.",
+            "A magnificent fern! One more day of growth remains.",
+            "Your Silver Fern has reached full maturity. Well done!"
+        ];
+
+        const FERN_STAGES = [
+            "fern_0.png",
+            "fern_1.png",
+            "fern_2.png",
+            "fern_3.png",
+            "fern_4.png",
+            "fern_5.png"
+        ];
+
+        let currentStage = 0;
+        let isPlanted = false;
+        let isWatered = false;
+        let promptIndex = 0;
+
+        const fern = document.getElementById('fern');
+        const nightOverlay = document.getElementById('night-overlay');
+        const textBox = document.getElementById('text-box');
+        const message = document.getElementById('message');
+        const seedsBtn = document.getElementById('seeds-btn');
+        const waterBtn = document.getElementById('water-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        function showMessage(text) {
+            message.textContent = text;
+            textBox.classList.add('visible');
+        }
+
+        function hideMessage() {
+            textBox.classList.remove('visible');
+        }
+
+        function init() {
+            showMessage(TEXT_PROMPTS[promptIndex]);
+
+            seedsBtn.addEventListener('mouseenter', () => {
+                if (!seedsBtn.classList.contains('disabled')) {
+                    seedsBtn.src = 'seeds_open.png';
+                }
+            });
+            seedsBtn.addEventListener('mouseleave', () => {
+                if (!seedsBtn.classList.contains('disabled')) {
+                    seedsBtn.src = 'seeds_closed.png';
+                }
+            });
+            seedsBtn.addEventListener('click', plantSeeds);
+
+            waterBtn.addEventListener('mouseenter', () => {
+                if (!waterBtn.classList.contains('disabled')) {
+                    waterBtn.src = 'can_pouring.png';
+                }
+            });
+            waterBtn.addEventListener('mouseleave', () => {
+                if (!waterBtn.classList.contains('disabled')) {
+                    waterBtn.src = 'can_upright.png';
+                }
+            });
+            waterBtn.addEventListener('click', waterPlant);
+
+            nextBtn.addEventListener('click', goToNextStage);
+        }
+
+        function plantSeeds() {
+            if (isPlanted) return;
+
+            isPlanted = true;
+            seedsBtn.classList.add('disabled');
+            waterBtn.classList.remove('disabled');
+
+            promptIndex++;
+            showMessage(TEXT_PROMPTS[promptIndex]);
+        }
+
+        function waterPlant() {
+            if (!isPlanted || isWatered) return;
+
+            isWatered = true;
+            waterBtn.classList.add('disabled');
+            nextBtn.classList.add('active');
+
+            promptIndex++;
+            showMessage(TEXT_PROMPTS[promptIndex]);
+        }
+
+        function goToNextStage() {
+            if (!isWatered || currentStage >= FERN_STAGES.length - 1) return;
+
+            nextBtn.classList.remove('active');
+            hideMessage();
+
+            nightOverlay.style.opacity = '1';
+
+            setTimeout(() => {
+                currentStage++;
+                fern.src = FERN_STAGES[currentStage];
+
+                setTimeout(() => {
+                    nightOverlay.style.opacity = '0';
+
+                    setTimeout(() => {
+                        if (currentStage < FERN_STAGES.length - 1) {
+                            isWatered = false;
+                            waterBtn.classList.remove('disabled');
+                            promptIndex++;
+                            showMessage(TEXT_PROMPTS[promptIndex]);
+                        } else {
+                            showMessage(TEXT_PROMPTS[TEXT_PROMPTS.length - 1]);
+                        }
+                    }, 500);
+                }, 500);
+            }, 1500);
+        }
+
+        init();
+    </script>
+</body>
+</html>
