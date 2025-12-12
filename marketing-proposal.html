@@ -84,16 +84,19 @@
 
         #action-buttons {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
+            top: 40px;
+            right: 40px;
             z-index: 10;
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            gap: 8px;
+            padding: 15px;
+            background: url('button-window-frame.png') center/cover no-repeat;
         }
 
         .action-btn {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             cursor: pointer;
             transition: transform 0.15s;
             object-fit: contain;
@@ -204,7 +207,13 @@
             textBox.classList.remove('visible');
         }
 
+        function updateFernSize() {
+            const sizes = ['60px', '120px', '180px', '240px', '280px', '320px'];
+            fern.style.maxHeight = sizes[currentStage];
+        }
+
         function init() {
+            updateFernSize();
             showMessage(TEXT_PROMPTS[promptIndex]);
 
             seedsBtn.addEventListener('mouseenter', () => {
@@ -267,6 +276,7 @@
             setTimeout(() => {
                 currentStage++;
                 fern.src = FERN_STAGES[currentStage];
+                updateFernSize();
 
                 setTimeout(() => {
                     nightOverlay.style.opacity = '0';
@@ -274,6 +284,7 @@
                     setTimeout(() => {
                         if (currentStage < FERN_STAGES.length - 1) {
                             isWatered = false;
+                            waterBtn.src = 'can_upright.png';
                             waterBtn.classList.remove('disabled');
                             promptIndex++;
                             showMessage(TEXT_PROMPTS[promptIndex]);
