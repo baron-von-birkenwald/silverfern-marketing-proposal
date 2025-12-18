@@ -57,11 +57,12 @@
 
         #text-box {
             position: absolute;
-            top: 30px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 450px;
-            padding: 15px 25px;
+            width: 520px;
+            max-height: 280px;
+            padding: 20px 30px;
             background: rgba(227, 218, 201, 0.95);
             border: 3px solid #8b7355;
             border-radius: 4px;
@@ -70,16 +71,31 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             opacity: 0;
             transition: opacity 0.3s;
+            overflow-y: auto;
         }
 
         #text-box.visible {
             opacity: 1;
         }
 
+        #text-box h3 {
+            color: #5a4a3a;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
         #text-box p {
             color: #4a4a3a;
-            font-size: 18px;
-            line-height: 1.6;
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 10px;
+        }
+
+        #text-box p:last-child {
+            margin-bottom: 0;
         }
 
         #action-buttons {
@@ -150,7 +166,8 @@
         <div id="night-overlay"></div>
 
         <div id="text-box">
-            <p id="message"></p>
+            <h3 id="stage-title"></h3>
+            <div id="message"></div>
         </div>
 
         <div id="action-buttons">
@@ -158,23 +175,56 @@
             <img id="water-btn" class="action-btn disabled" src="can_upright.png" alt="Water">
         </div>
 
-        <button id="next-btn">SKIP TO NEXT STAGE →</button>
+        <button id="next-btn">LET TIME PASS →</button>
     </div>
 
     <script>
-        const TEXT_PROMPTS = [
-            "The soil awaits. Plant your seeds to begin.",
-            "Seeds planted! Now water them to help them grow.",
-            "The seeds drink deeply. Press NEXT to see what tomorrow brings.",
-            "A tiny sprout emerges! Water it to encourage growth.",
-            "The sprout reaches for the light. Tomorrow holds promise.",
-            "Small fronds begin to unfurl. Keep nurturing your fern.",
-            "The fern grows stronger each day. Continue your care.",
-            "Beautiful leaves spread wide. Your fern is thriving.",
-            "The fern stands tall and proud. Almost fully grown.",
-            "A magnificent fern! One more day of growth remains.",
-            "Your Silver Fern has reached full maturity. Well done!"
-        ];
+        /*
+         * Story content mapped from text files:
+         * - seed.txt -> seed
+         * - watering_vision.txt -> watering_vision
+         * - watering_product.txt -> watering_product
+         * - reeling_in.txt -> reeling_in
+         * - harvest.txt -> harvest
+         */
+        const STORY_CONTENT = {
+            intro: {
+                title: "The Journey Begins",
+                text: "Every customer relationship starts the same way every plant does: with something small, something almost invisible, something full of potential.<br><br><em>Plant your seed to begin the journey.</em>"
+            },
+            seed: {
+                title: "The Seed",
+                file: "seed.txt",
+                text: "A scroll through Instagram. A glance at X. And there it is—an image of a thriving monstera in morning light, a witty observation about why every startup needs a plant mascot.<br><br>Something sticks. Not a sales pitch. Just a feeling. A tiny spark of curiosity planted in the back of the mind.<br><br><em>This is the seed. Now water it.</em>"
+            },
+            watering_vision: {
+                title: "The First Watering",
+                file: "watering_vision.txt",
+                text: "Days pass. The viewer scrolls again. And there we are—another post. They smile. They follow.<br><br>Instagram shows them beauty. X shows them voice—our optimism, our wit, our irreverence.<br><br>With each post, the seed stirs. Roots begin to form—not toward our product, but toward our worldview.<br><br><em>Water again to continue nurturing.</em>"
+            },
+            watering_product: {
+                title: "The Deeper Watering",
+                file: "watering_product.txt",
+                text: "They know our name now. Curiosity has turned into a question: \"What exactly do these people do?\"<br><br>On LinkedIn, they find us professional and credible. At a trade show, Blindspot places our brand perfectly. Mailchimp delivers value to their inbox.<br><br><em>The roots run deep. Keep watering.</em>"
+            },
+            reeling_in: {
+                title: "The First Bloom",
+                file: "reeling_in.txt",
+                text: "They click a link. Fill out a form. \"Yes, I want to learn more.\"<br><br>This is the first bloom—visible proof of everything we've nurtured. Mailchimp welcomes them like an old friend. Each email is a petal opening.<br><br><em>They're ready. One more watering to bring them home.</em>"
+            },
+            deepening: {
+                title: "The Deepening",
+                file: "deepening.txt",
+                text: "The relationship strengthens with every touchpoint. They open every email. They engage with our content. They're invested in our success as we are in theirs.<br><br>The bloom grows fuller. Colors more vibrant. They understand our value. They're ready for a conversation.<br><br><em>Almost there. One final nurturing.</em>"
+            },
+            harvest: {
+                title: "The Harvest",
+                file: "harvest.txt",
+                text: "The fruit is ready. A qualified lead, warm and ready, passed gently from marketing to sales.<br><br>\"I've been following you for months. I love what you're about.\"<br><br>Marketing didn't just generate a lead—marketing grew a customer.<br><br><strong>To participate in the growth of every plant in the world.</strong>"
+            }
+        };
+
+        const STAGE_SEQUENCE = ['intro', 'seed', 'watering_vision', 'watering_product', 'reeling_in', 'deepening', 'harvest'];
 
         const FERN_STAGES = [
             "fern_0.png",
@@ -188,18 +238,20 @@
         let currentStage = 0;
         let isPlanted = false;
         let isWatered = false;
-        let promptIndex = 0;
 
         const fern = document.getElementById('fern');
         const nightOverlay = document.getElementById('night-overlay');
         const textBox = document.getElementById('text-box');
+        const stageTitle = document.getElementById('stage-title');
         const message = document.getElementById('message');
         const seedsBtn = document.getElementById('seeds-btn');
         const waterBtn = document.getElementById('water-btn');
         const nextBtn = document.getElementById('next-btn');
 
-        function showMessage(text) {
-            message.textContent = text;
+        function showStory(stageKey) {
+            const content = STORY_CONTENT[stageKey];
+            stageTitle.textContent = content.title;
+            message.innerHTML = content.text;
             textBox.classList.add('visible');
         }
 
@@ -214,7 +266,7 @@
 
         function init() {
             updateFernSize();
-            showMessage(TEXT_PROMPTS[promptIndex]);
+            showStory('intro');
 
             seedsBtn.addEventListener('mouseenter', () => {
                 if (!seedsBtn.classList.contains('disabled')) {
@@ -250,8 +302,7 @@
             seedsBtn.classList.add('disabled');
             waterBtn.classList.remove('disabled');
 
-            promptIndex++;
-            showMessage(TEXT_PROMPTS[promptIndex]);
+            showStory('seed');
         }
 
         function waterPlant() {
@@ -259,10 +310,10 @@
 
             isWatered = true;
             waterBtn.classList.add('disabled');
-            nextBtn.classList.add('active');
 
-            promptIndex++;
-            showMessage(TEXT_PROMPTS[promptIndex]);
+            if (currentStage < FERN_STAGES.length - 1) {
+                nextBtn.classList.add('active');
+            }
         }
 
         function goToNextStage() {
@@ -283,13 +334,13 @@
 
                     setTimeout(() => {
                         if (currentStage < FERN_STAGES.length - 1) {
+                            const stageKey = STAGE_SEQUENCE[currentStage + 1];
+                            showStory(stageKey);
                             isWatered = false;
                             waterBtn.src = 'can_upright.png';
                             waterBtn.classList.remove('disabled');
-                            promptIndex++;
-                            showMessage(TEXT_PROMPTS[promptIndex]);
                         } else {
-                            showMessage(TEXT_PROMPTS[TEXT_PROMPTS.length - 1]);
+                            showStory('harvest');
                         }
                     }, 500);
                 }, 500);
