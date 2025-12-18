@@ -20,7 +20,7 @@ Every customer begins as a seed. Here is how we grow them.
 |-------|------|-------------|
 | 🌱 **The Seed** | [`seed.txt`](seed.txt) | A single post on Instagram or X plants an idea in someone's mind. No pitch—just a moment of connection. |
 | 💧 **The First Watering** | [`watering_vision.txt`](watering_vision.txt) | Consistent presence on Instagram and X nurtures the vision. Beauty, wit, personality. Roots begin to form. |
-| 🌿 **The Deeper Watering** | [`watering_product.txt`](watering_product.txt) | LinkedIn credibility, Blindspot visibility, Mailchimp value. The product emerges behind the vision. |
+| 🌿 **The Deeper Watering** | [`watering_product.txt`](watering_product.txt) | LinkedIn credibility, Blindspot visibility, Mailchimp value. Growers see the product as a solution. |
 | 🌸 **The First Bloom** | [`reeling_in.txt`](reeling_in.txt) | They sign up. Welcome sequences nurture them. The relationship deepens through every email. |
 | 🌺 **The Deepening** | [`deepening.txt`](deepening.txt) | They engage with everything. Open every email. Share our content. Build internal buy-in. |
 | 🍎 **The Harvest** | [`harvest.txt`](harvest.txt) | A warm, qualified lead transfers to sales. Trust already established. The cycle begins anew. |
